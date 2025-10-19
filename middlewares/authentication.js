@@ -19,7 +19,7 @@ export const isAuthenticated = (req, res, next) => {
 
         const user = await User.findByPk(data.id, {
             attributes: {
-                exclude: 'password'
+                exclude: ['password', 'isVerified', 'verificationCode']
             }
         });
         

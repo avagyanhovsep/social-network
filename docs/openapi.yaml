@@ -1,0 +1,281 @@
+openapi: 3.1.0
+info:
+  title: Social Network
+  version: 1.0.0
+  description: Authentication and account lifecycle endpoints.
+servers:
+  - url: http://localhost:4002
+    description: Local dev
+
+tags:
+  - name: Auth
+
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Sign up a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            examples:
+              default:
+                value:
+                  firstName: Hovsep
+                  lastName: Avagyan
+                  username: hovsep_01
+                  email: hovsep@example.com
+                  password: P@ssw0rd!
+      responses:
+        '200':
+          description: Signup success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                ok:
+                  value: { message: "hovsep_01 has signed up successfully!" }
+        '400':
+          description: Invalid/Missing credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/signin:
+    post:
+      tags: [Auth]
+      summary: Sign in and get JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SigninRequest' }
+            examples:
+              default:
+                value:
+                  email: hovsep@example.com
+                  password: P@ssw0rd!
+      responses:
+        '200':
+          description: Signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthTokenResponse' }
+              examples:
+                ok:
+                  value:
+                    message: "hovsep_01 signed in successfully."
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '403':
+          description: Email not verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/user:
+    get:
+      tags: [Auth]
+      summary: Get current user (requires JWT)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401':
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/verify/{confirmationCode}:
+    get:
+      tags: [Auth]
+      summary: Verify email using confirmation code
+      parameters:
+        - in: path
+          name: confirmationCode
+          required: true
+          schema:
+            type: string
+          description: Code formatted like `<userId>-<token>`
+          example: "123-2f7d6f9c8b7a4b899a2c2a7f1e3f9b1a"
+      responses:
+        '200':
+          description: Account verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+              examples:
+                ok:
+                  value: { message: "Account verified successfully!" }
+        '400':
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Start password reset flow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForgotPasswordRequest' }
+            examples:
+              default:
+                value: { email: hovsep@example.com }
+      responses:
+        '200':
+          description: Generic OK message (email may or may not exist)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+              examples:
+                ok:
+                  value: { message: "PLease check your email to reset your password!" }
+        '400':
+          description: Invalid email
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/forgot-password/reset/{sessionId}:
+    post:
+      tags: [Auth]
+      summary: Complete password reset with session code
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          description: Code formatted like `<userId>-<token>`
+          example: "123-48a9f1e7d2c54a1fa0e0d1c3b5e8a9f0"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetPasswordRequest' }
+            examples:
+              default:
+                value: { password: "NewP@ssw0rd!" }
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageResponse' }
+              examples:
+                ok:
+                  value: { message: "Your password has been reset successfully!" }
+        '400':
+          description: Invalid or expired link / invalid password
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: New password equals old one
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        token:
+          type: string
+      required: [message, token]
+
+    SignupRequest:
+      type: object
+      properties:
+        firstName: { type: string }
+        lastName:  { type: string }
+        username:  { type: string }
+        email:     { type: string, format: email }
+        password:  { type: string, format: password }
+      required: [firstName, lastName, username, email, password]
+
+    SigninRequest:
+      type: object
+      properties:
+        email:    { type: string, format: email }
+        password: { type: string, format: password }
+      required: [email, password]
+
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+      required: [email]
+
+    ResetPasswordRequest:
+      type: object
+      properties:
+        password: { type: string, format: password, minLength: 8 }
+      required: [password]
+
+    User:
+      type: object
+      properties:
+        id:         { type: integer }
+        firstName:  { type: string }
+        lastName:   { type: string }
+        username:   { type: string }
+        email:      { type: string, format: email }
+        isVerified: { type: boolean }
+        createdAt:  { type: string, format: date-time }
+        updatedAt:  { type: string, format: date-time }
