@@ -14,7 +14,7 @@ export const isAuthenticated = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_SECRET, async (err, data) => {
         if (err) {
-            return res.status(401).send({ message: "Forbidden" });
+            return res.status(403).send({ message: "Forbidden" });
         }
 
         const user = await User.findByPk(data.id, {

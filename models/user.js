@@ -32,15 +32,19 @@ export const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    isVerified: {
+    isSigninAllowed: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false,
     },
-    verificationCode: {
+    signinCode: {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    cpvc: {
+        type: DataTypes.STRING,
+        allowNull: true
+    }
   },
   { timestamps: true }
 );

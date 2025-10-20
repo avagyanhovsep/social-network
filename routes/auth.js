@@ -13,8 +13,13 @@ authRouter.post("/signin", authController.signin);
 
 authRouter.get("/user", isAuthenticated, authController.getUser);
 
-authRouter.get("/verify/:confirmationCode", authController.verify);
+authRouter.post("/verify", authController.verify); 
 
 authRouter.post("/forgot-password", authController.forgotPassword);
 
-authRouter.post("/forgot-password/reset/:sessionId", authController.resetPassword);
+authRouter.post("/forgot-password/verify-code", authController.verifyCode);
+
+authRouter.post("/forgot-password/reset", authController.resetPassword);
+
+authRouter.patch('/profile/settings/change-email', authController.changeUserEmail);
+authRouter.patch('/profile/settings/change-password', authController.changeUserPasword);

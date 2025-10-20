@@ -12,16 +12,18 @@ export default function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm<IUser>();
 
   const handleSigin: SubmitHandler<IUser> = (user) => {
-    Axios.post("/auth/signin", user).then(() => {
-        setMessage('');
-        navigate("/profile");
-    }).catch((err) => {
-        const error = (err as AxiosError).response?.data as { message: string };
+      Axios.post<{ token: string }>("/auth/signin", user)
+        .then(response => {
+            setMessage('');
+            sessionStorage.setItem('token', response.data.token);
+            navigate("/profile");
+        })
+        .catch((err) => {
+            const error = (err as AxiosError).response?.data as { message: string };
 
-        if (error) {
-          setMessage(error.message);
-        }
-      });
+            if (error) 
+                setMessage(error.message);
+        });
   };
 
   return (
@@ -188,7 +190,7 @@ export default function Login() {
             {/* Forgot password */}
             <div className="flex justify-end text-sm">
               <Link
-                to="#"
+                to="/forgot-password"
                 className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
               >
                 Forgot password?
